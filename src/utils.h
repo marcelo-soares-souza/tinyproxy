@@ -34,4 +34,8 @@ extern int pidfile_create (const char *path);
 extern int create_file_safely (const char *filename,
                                unsigned int truncate_file);
 
+extern void encode_base_64(char* src, char* dest, int max_len);
+
+extern char *repl_str(const char *str, const char *old, const char *new);
+
 #endif

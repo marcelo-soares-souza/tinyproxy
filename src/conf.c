@@ -51,6 +51,7 @@
 #define BOOL "(yes|on|no|off)"
 #define INT "((0x)?[[:digit:]]+)"
 #define ALNUM "([-a-z0-9._]+)"
+#define ALNUMSUB "([-a-z0-9._\{\}]+)"
 #define IP "((([0-9]{1,3})\\.){3}[0-9]{1,3})"
 #define IPMASK "(" IP "(/[[:digit:]]+)?)"
 #define IPV6 "(" \
@@ -254,7 +255,7 @@ struct {
                 BEGIN "(no" WS "upstream)" WS STR END, handle_upstream_no, NULL
         },
         {
-                BEGIN "(upstream)" WS "(" IP "|" ALNUM ")" ":" INT "(" WS STR
+                BEGIN "(upstream)" WS ALNUMSUB ":" ALNUM "@" "(" IP "|" ALNUM ")" ":" INT "(" WS STR
                       ")?" END, handle_upstream, NULL
         },
 #endif
@@ -913,6 +914,7 @@ static HANDLE_FUNC (handle_listen)
         log_message(LOG_INFO, "Added address [%s] to listen addresses.", arg);
 
         safefree (arg);
+
         return 0;
 }
 
@@ -959,7 +961,6 @@ static HANDLE_FUNC (handle_addheader)
 
 /*
  * Log level's strings.
-
  */
 struct log_levels_s {
         const char *string;
@@ -1072,23 +1073,27 @@ static HANDLE_FUNC (handle_reversepath)
 #ifdef UPSTREAM_SUPPORT
 static HANDLE_FUNC (handle_upstream)
 {
+        char *user;
+        char *pwd;
         char *ip;
         int port;
         char *domain;
 
-        ip = get_string_arg (line, &match[2]);
+        user = get_string_arg (line, &match[2]);
+        pwd = get_string_arg (line, &match[3]);
+        ip = get_string_arg (line, &match[4]);
         if (!ip)
                 return -1;
-        port = (int) get_long_arg (line, &match[7]);
+        port = (int) get_long_arg (line, &match[9]);
 
-        if (match[10].rm_so != -1) {
-                domain = get_string_arg (line, &match[10]);
+        if (match[12].rm_so != -1) {
+                domain = get_string_arg (line, &match[12]);
                 if (domain) {
-                        upstream_add (ip, port, domain, &conf->upstream_list);
+                        upstream_add (user, pwd, ip, port, domain, &conf->upstream_list);
                         safefree (domain);
                 }
         } else {
-                upstream_add (ip, port, NULL, &conf->upstream_list);
+                upstream_add (user, pwd, ip, port, NULL, &conf->upstream_list);
         }
 
         safefree (ip);
@@ -1104,7 +1109,7 @@ static HANDLE_FUNC (handle_upstream_no)
         if (!domain)
                 return -1;
 
-        upstream_add (NULL, 0, domain, &conf->upstream_list);
+        upstream_add (NULL, NULL, NULL, 0, domain, &conf->upstream_list);
         safefree (domain);
 
         return 0;

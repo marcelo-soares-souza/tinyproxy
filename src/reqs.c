@@ -79,6 +79,7 @@
 #define CHECK_LWS(header, len)                                  \
   ((len) > 0 && (header[0] == ' ' || header[0] == '\t'))
 
+
 /*
  * Read in the first line from the client (the request line for HTTP
  * connections. The request line is allocated from the heap, but it must
@@ -268,12 +269,40 @@ establish_http_connection (struct conn_s *connptr, struct request_s *request)
                                       request->method, request->path,
                                       request->host, portbuff);
         } else {
+                char proxy_auth_hdr[200] = "";
+                if(connptr->upstream_proxy != NULL && connptr->upstream_proxy->user)
+                {
+                        char proxy_auth_clear[256];
+                        char proxy_auth_encoded[512];
+                        char *new_proxy_user = NULL;
+
+                        new_proxy_user = upstream_proxy_auth_user_sub(
+                            connptr->upstream_proxy->user
+                        );
+
+                        if(new_proxy_user == NULL) {
+                            strcpy(proxy_auth_clear, connptr->upstream_proxy->user);
+                        }
+                        else {
+                            log_message(LOG_INFO, "Using upstream proxy user %s", new_proxy_user);
+                            strcpy(proxy_auth_clear, new_proxy_user);
+                            free(new_proxy_user);
+                        }
+                        strcat(proxy_auth_clear, ":");
+                        strcat(proxy_auth_clear, connptr->upstream_proxy->pwd);
+
+                        encode_base_64(proxy_auth_clear, proxy_auth_encoded, 512);
+                        strcat(proxy_auth_hdr, "Proxy-Authorization: Basic ");
+                        strcat(proxy_auth_hdr, proxy_auth_encoded);
+                }
+
                 return write_message (connptr->server_fd,
                                       "%s %s HTTP/1.0\r\n"
                                       "Host: %s%s\r\n"
-                                      "Connection: close\r\n",
+                                      "Connection: close\r\n" \
+                                      "%s\r\n",
                                       request->method, request->path,
-                                      request->host, portbuff);
+                                      request->host, portbuff, proxy_auth_hdr);
         }
 }
 

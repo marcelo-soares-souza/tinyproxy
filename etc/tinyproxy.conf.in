@@ -166,6 +166,11 @@ LogLevel Info
 #  IP/bits  matches network/mask
 #  IP/mask  matches network/mask
 #
+#
+# To configure authentication for an upstream proxy, prefix the 
+# proxy address with username:password@. Example:
+# username:password@upstream.example.com:8080
+# 
 #Upstream some.remote.proxy:port
 
 #
