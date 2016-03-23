@@ -51,7 +51,7 @@
 #define BOOL "(yes|on|no|off)"
 #define INT "((0x)?[[:digit:]]+)"
 #define ALNUM "([-a-z0-9._]+)"
-#define ALNUMSUB "([-a-z0-9._\{\}]+)"
+#define ALNUMSUB "([-a-z0-9#._\{\}]+)"
 #define IP "((([0-9]{1,3})\\.){3}[0-9]{1,3})"
 #define IPMASK "(" IP "(/[[:digit:]]+)?)"
 #define IPV6 "(" \
@@ -255,7 +255,7 @@ struct {
                 BEGIN "(no" WS "upstream)" WS STR END, handle_upstream_no, NULL
         },
         {
-                BEGIN "(upstream)" WS ALNUMSUB ":" ALNUM "@" "(" IP "|" ALNUM ")" ":" INT "(" WS STR
+                BEGIN "(upstream)" WS ALNUMSUB ":" ALNUMSUB "@" "(" IP "|" ALNUM ")" ":" INT "(" WS STR
                       ")?" END, handle_upstream, NULL
         },
 #endif
